@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MEEF MEATS</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="container page-top-space">
+    <div class="topbar">
+      <div class="menu-wrap">
+        <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+          <div class="menu-icon">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="chev"></div>
+          </div>
+        </button>
+        <div class="dropdown" id="menuDrop">
+          <a href="#">About</a>
+          <a href="#">FAQ</a>
+          <a href="#">Contact</a>
+          <a href="#">Track</a>
+          <a href="/admin" target="_blank" rel="noopener">Admin</a>
+          <a href="#">Terms</a>
+          <a href="#">Privacy</a>
+        </div>
+      </div>
+      <div class="center-brand">MEEF MEATS</div>
+      <div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="hero">
+        <div style="flex:1;min-width:260px">
+          <div class="badge">Pre-order pickup • Fri-Sun 07:00-10:30</div>
+          <h1>Pure Texas. Pure Turkey.</h1>
+          <div class="kicker">Order exactly 3 weeks ahead. Choose your cut size and flavor. Pick up during our weekend window.</div>
+        </div>
+        <div class="hero-illus">
+          <div class="card" style="text-align:center">
+            <div class="small">Placeholder Illustration</div>
+            <div style="font-size:42px;line-height:1.1">🍖</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="row" style="flex-wrap:wrap;gap:16px;justify-content:space-between">
+        <div>
+          <div class="small">Select a pickup date (exactly 3 weeks out)</div>
+          <div id="dayButtons" class="day-group" style="margin-top:8px"></div>
+        </div>
+        <div>
+          <div class="small">Pickup window</div>
+          <div class="badge">Fri-Sun • 07:00-10:30</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row start" style="align-items:flex-start">
+      <div style="flex:2">
+        <div class="grid">
+          <div class="card">
+            <h3 style="margin:8px 0">Turkey</h3>
+            <div class="small" style="margin-bottom:8px">Full Texas turkey or 1/2 Texas turkey. Choose your flavor.</div>
+
+            <label class="small">Flavor</label>
+            <div class="row" style="flex-wrap:wrap;gap:8px;margin:6px 0 10px" id="flavors">
+              <div class="pill active" data-flavor="Cajun">Cajun</div>
+              <div class="pill" data-flavor="Lemon Pepper">Lemon Pepper</div>
+              <div class="pill" data-flavor="Honey Mustard">Honey Mustard</div>
+              <div class="pill" data-flavor="Fajita">Fajita</div>
+            </div>
+
+            <div class="row" style="gap:8px;margin:8px 0">
+              <div class="size-wrap">
+                <button class="size-pill active" data-size="full">Full Texas turkey ($50.00)</button>
+                <button class="size-pill" data-size="half">1/2 Texas turkey ($30.00)</button>
+              </div>
+              <input type="number" min="1" value="1" class="input" style="width:90px" id="qty">
+            </div>
+
+            <div class="row" style="gap:8px;align-items:center">
+              <span class="stockchip stock-ok" id="stockChip">In stock</span>
+            </div>
+
+            <button class="btn" style="margin-top:12px" id="addBtn">Add to cart</button>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <div class="card cart">
+          <h3>Cart</h3>
+          <div id="cartItems" class="small">Your cart is empty.</div>
+          <div class="row" style="justify-content:space-between;margin-top:8px">
+            <div class="small">Total</div>
+            <div id="total" class="price">$0.00</div>
+          </div>
+          <hr style="border:0;border-top:1px solid #222;margin:12px 0">
+          <form id="checkoutForm">
+            <input class="input" name="customer_name" placeholder="Your name" required style="margin-bottom:8px">
+            <input class="input" name="email" placeholder="Email" required style="margin-bottom:8px" type="email">
+            <input class="input" name="phone" placeholder="Phone (optional)" style="margin-bottom:8px">
+            <button class="btn" type="button" id="placeOrder">Place Pre-Order</button>
+          </form>
+          <div id="orderResult" class="small" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer small">
+      © <span id="year"></span> MEEF MEATS • <a href="/admin" target="_blank" rel="noopener">Admin</a> • <a href="#">Instagram</a> • <a href="#">Terms</a> • <a href="#">Privacy</a>
+    </div>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>
