@@ -2,6 +2,7 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { Resend } from "resend";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +10,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "meefadmin";
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 const DATA_DIR = path.join(__dirname, "data");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
@@ -29,6 +33,7 @@ if (!fs.existsSync(SETTINGS_FILE)) {
       instagram_url: "",
       contact: { phone: "", email: "", address: "" },
       status_overrides: {},
+      notification_emails: [],
       payment_methods: {
         venmo_enabled: true,
         venmo_username: "@MeefMeats",
@@ -76,6 +81,84 @@ function writeJSON(filePath, data) {
   } catch (error) {
     console.error("Error writing file:", error);
     return false;
+  }
+}
+
+async function sendOrderNotification(order) {
+  if (!resend) {
+    console.log("Resend not configured, skipping email");
+    return;
+  }
+
+  const settings = readJSON(SETTINGS_FILE);
+  const notificationEmails = settings.notification_emails || [];
+
+  if (notificationEmails.length === 0) {
+    console.log("No notification emails configured");
+    return;
+  }
+
+  const orderDate = new Date(order.created_at);
+  const pickupDate = new Date(order.pickup_date + "T00:00:00");
+  
+  const itemsList = order.items.map(item => {
+    const price = item.size === "half" ? 3000 : 5000;
+    const sizeLabel = item.size === "full" ? "Full" : "Half";
+    return "  - " + item.qty + "x " + sizeLabel + " Turkey - " + item.flavor + " ($" + (price / 100).toFixed(2) + ")";
+  }).join("\n");
+
+  const emailHTML = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 20px;">
+      <div style="background: #000; color: #fff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="margin: 0; font-size: 24px;">🍖 New MEEF MEATS Order</h1>
+      </div>
+      
+      <div style="background: #fff; padding: 30px; border-radius: 0 0 10px 10px;">
+        <h2 style="color: #000; margin-top: 0;">Order ${order.id}</h2>
+        <p style="color: #666;">Placed on ${orderDate.toLocaleDateString()} at ${orderDate.toLocaleTimeString()}</p>
+        
+        <hr style="border: 1px solid #eee; margin: 20px 0;">
+        
+        <h3 style="color: #000;">Customer Information</h3>
+        <ul style="color: #333; line-height: 1.8;">
+          <li><strong>Name:</strong> ${order.customer_name}</li>
+          <li><strong>Email:</strong> ${order.email}</li>
+          <li><strong>Phone:</strong> ${order.phone}</li>
+          <li><strong>Pickup Date:</strong> ${pickupDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</li>
+        </ul>
+        
+        <h3 style="color: #000; margin-top: 20px;">Order Details</h3>
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; font-family: monospace;">
+${itemsList}
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #000; color: #fff; border-radius: 8px; text-align: center;">
+          <h2 style="margin: 0; font-size: 28px;">Total: $${(order.total_cents / 100).toFixed(2)}</h2>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+          <a href="https://meef-meats.onrender.com/admin" style="display: inline-block; background: #000; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">View in Admin Panel</a>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+        <p>MEEF MEATS - Pure Texas. Pure Turkey.</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    for (const email of notificationEmails) {
+      await resend.emails.send({
+        from: "MEEF MEATS <orders@resend.dev>",
+        to: email,
+        subject: "New Order - " + order.id + " - $" + (order.total_cents / 100).toFixed(2),
+        html: emailHTML
+      });
+      console.log("Email sent to:", email);
+    }
+  } catch (error) {
+    console.error("Error sending email:", error);
   }
 }
 
@@ -143,7 +226,7 @@ app.get("/api/availability", (req, res) => {
   }
 });
 
-app.post("/api/orders", (req, res) => {
+app.post("/api/orders", async (req, res) => {
   const orderData = req.body || {};
   
   if (!orderData.customer_name || orderData.customer_name.length > 100) {
@@ -192,6 +275,8 @@ app.post("/api/orders", (req, res) => {
     if (!writeJSON(ORDERS_FILE, orders)) {
       return res.status(500).json({ ok: false, error: "Failed to save order" });
     }
+
+    await sendOrderNotification(order);
     
     res.json({ ok: true, order_id: order.id, total_cents: total });
   } catch (error) {
@@ -287,6 +372,7 @@ app.put("/api/admin/settings", basicAuth, (req, res) => {
       instagram_url: patch.instagram_url !== undefined ? patch.instagram_url : existing.instagram_url,
       contact: Object.assign({}, existing.contact, patch.contact || {}),
       status_overrides: Object.assign({}, existing.status_overrides, patch.status_overrides || {}),
+      notification_emails: patch.notification_emails !== undefined ? patch.notification_emails : existing.notification_emails,
       payment_methods: Object.assign({}, existing.payment_methods, patch.payment_methods || {})
     };
     
