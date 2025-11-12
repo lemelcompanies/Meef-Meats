@@ -12,7 +12,8 @@
   "author": "MEEF MEATS",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "resend": "^3.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
