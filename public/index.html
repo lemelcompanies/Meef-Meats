@@ -9,6 +9,7 @@
 </head>
 <body>
   <div class="container page-top-space">
+    <!-- HEADER -->
     <div class="topbar">
       <div class="menu-wrap">
         <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
@@ -33,7 +34,8 @@
       <div></div>
     </div>
 
-    <div class="card" style="margin-bottom:16px">
+    <!-- HERO -->
+    <div class="card hero-card">
       <div class="hero">
         <div style="flex:1;min-width:260px">
           <div class="badge">Pre-order pickup • Fri-Sun 07:00-10:30</div>
@@ -41,83 +43,143 @@
           <div class="kicker">Order exactly 3 weeks ahead. Choose your cut size and flavor. Pick up during our weekend window.</div>
         </div>
         <div class="hero-illus">
-          <div class="card" style="text-align:center">
-            <div class="small">Placeholder Illustration</div>
-            <div style="font-size:42px;line-height:1.1">🍖</div>
+          <div class="card" style="text-align:center;background:#0f0f0f">
+            <div style="font-size:64px;line-height:1">🍖</div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:16px">
-      <div class="row" style="flex-wrap:wrap;gap:16px;justify-content:space-between">
-        <div>
-          <div class="small">Select a pickup date (exactly 3 weeks out)</div>
-          <div id="dayButtons" class="day-group" style="margin-top:8px"></div>
+    <!-- MAIN CONTENT GRID -->
+    <div class="content-grid">
+      <!-- LEFT COLUMN: BUILD YOUR TURKEY -->
+      <div class="build-column">
+        <!-- STEP 1: DATE -->
+        <div class="card">
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <div class="step-title">Choose Pickup Date</div>
+          </div>
+          <div class="section-label">Select your pickup day (3 weeks out)</div>
+          <div id="dayButtons" class="date-pills"></div>
+          <div class="badge" style="margin-top:12px">Pickup window: 07:00 - 10:30 AM</div>
         </div>
-        <div>
-          <div class="small">Pickup window</div>
-          <div class="badge">Fri-Sun • 07:00-10:30</div>
-        </div>
-      </div>
-    </div>
 
-    <div class="row start" style="align-items:flex-start">
-      <div style="flex:2">
-        <div class="grid">
-          <div class="card">
-            <h3 style="margin:8px 0">Turkey</h3>
-            <div class="small" style="margin-bottom:8px">Full Texas turkey or 1/2 Texas turkey. Choose your flavor.</div>
-
-            <label class="small">Flavor</label>
-            <div class="row" style="flex-wrap:wrap;gap:8px;margin:6px 0 10px" id="flavors">
-              <div class="pill active" data-flavor="Cajun">Cajun</div>
-              <div class="pill" data-flavor="Lemon Pepper">Lemon Pepper</div>
-              <div class="pill" data-flavor="Honey Mustard">Honey Mustard</div>
-              <div class="pill" data-flavor="Fajita">Fajita</div>
-            </div>
-
-            <div class="row" style="gap:8px;margin:8px 0">
-              <div class="size-wrap">
-                <button class="size-pill active" data-size="full">Full Texas turkey ($50.00)</button>
-                <button class="size-pill" data-size="half">1/2 Texas turkey ($30.00)</button>
+        <!-- STEP 2: SIZE -->
+        <div class="card">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <div class="step-title">Select Size</div>
+          </div>
+          <div class="section-label">Choose your turkey size</div>
+          <div class="option-grid" id="sizeOptions">
+            <button class="option-btn" data-size="full" data-price="5000">
+              <div class="size-option">
+                <div>Full Turkey</div>
+                <div class="price">$50.00</div>
               </div>
-              <input type="number" min="1" value="1" class="input" style="width:90px" id="qty">
-            </div>
+            </button>
+            <button class="option-btn" data-size="half" data-price="3000">
+              <div class="size-option">
+                <div>Half Turkey</div>
+                <div class="price">$30.00</div>
+              </div>
+            </button>
+          </div>
+        </div>
 
-            <div class="row" style="gap:8px;align-items:center">
-              <span class="stockchip stock-ok" id="stockChip">In stock</span>
-            </div>
+        <!-- STEP 3: FLAVOR -->
+        <div class="card">
+          <div class="step-header">
+            <div class="step-number">3</div>
+            <div class="step-title">Select Flavor</div>
+          </div>
+          <div class="section-label">Pick your seasoning</div>
+          <div class="option-grid" id="flavorOptions">
+            <button class="option-btn" data-flavor="Cajun">Cajun</button>
+            <button class="option-btn" data-flavor="Lemon Pepper">Lemon Pepper</button>
+            <button class="option-btn" data-flavor="Honey Mustard">Honey Mustard</button>
+            <button class="option-btn" data-flavor="Fajita">Fajita</button>
+          </div>
+        </div>
 
-            <button class="btn" style="margin-top:12px" id="addBtn">Add to cart</button>
+        <!-- STEP 4: QUANTITY -->
+        <div class="card">
+          <div class="step-header">
+            <div class="step-number">4</div>
+            <div class="step-title">Quantity</div>
+          </div>
+          <div class="section-label">How many turkeys?</div>
+          <div class="qty-selector">
+            <button class="qty-btn" id="qtyMinus">−</button>
+            <div class="qty-display" id="qtyDisplay">1</div>
+            <button class="qty-btn" id="qtyPlus">+</button>
           </div>
         </div>
       </div>
-      <div style="flex:1">
-        <div class="card cart">
-          <h3>Cart</h3>
-          <div id="cartItems" class="small">Your cart is empty.</div>
-          <div class="row" style="justify-content:space-between;margin-top:8px">
-            <div class="small">Total</div>
-            <div id="total" class="price">$0.00</div>
+
+      <!-- RIGHT COLUMN: SUMMARY & CART -->
+      <div class="summary-column">
+        <div class="card summary-card">
+          <!-- CURRENT SELECTION PREVIEW -->
+          <div class="summary-header">Your Turkey 🍖</div>
+          <div class="turkey-preview" id="turkeyPreview">
+            <div class="preview-row">
+              <span class="preview-label">Size:</span>
+              <span class="preview-value" id="previewSize">Not selected</span>
+            </div>
+            <div class="preview-row">
+              <span class="preview-label">Flavor:</span>
+              <span class="preview-value" id="previewFlavor">Not selected</span>
+            </div>
+            <div class="preview-row">
+              <span class="preview-label">Quantity:</span>
+              <span class="preview-value" id="previewQty">1</span>
+            </div>
+            <div class="preview-row">
+              <span class="preview-label">Pickup:</span>
+              <span class="preview-value" id="previewDate">Not selected</span>
+            </div>
           </div>
-          <hr style="border:0;border-top:1px solid #222;margin:12px 0">
-          <div id="checkoutForm">
-            <input class="input" id="customerName" placeholder="Your name" required style="margin-bottom:8px">
-            <input class="input" id="customerEmail" placeholder="Email" required style="margin-bottom:8px" type="email">
-            <input class="input" id="customerPhone" placeholder="Phone (optional)" style="margin-bottom:8px">
-            <button class="btn" type="button" id="placeOrder">Place Pre-Order</button>
+
+          <div class="total-section">
+            <div class="total-row">
+              <span class="total-label">Total</span>
+              <span class="total-price" id="previewTotal">$0.00</span>
+            </div>
           </div>
-          <div id="orderResult" class="small" style="margin-top:10px"></div>
+
+          <button class="add-btn" id="addToCartBtn">Add to Cart</button>
+
+          <!-- CART SECTION -->
+          <div style="margin-top:24px;padding-top:20px;border-top:1px solid #222">
+            <div class="summary-header">Cart (<span id="cartCount">0</span>)</div>
+            <div id="cartItems">
+              <div class="preview-empty">Add items to get started</div>
+            </div>
+            <button class="checkout-btn" id="checkoutBtn" style="display:none">
+              Checkout (<span id="cartTotal">$0.00</span>)
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- STEP 5: CUSTOMER INFO -->
+    <div class="card" id="customerInfoSection" style="display:none;margin-top:24px">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-title">Your Information</div>
+      </div>
+      <div style="display:grid;gap:12px;max-width:600px">
+        <input type="text" id="customerName" placeholder="Full Name *" class="input" required>
+        <input type="email" id="customerEmail" placeholder="Email Address *" class="input" required>
+        <input type="tel" id="customerPhone" placeholder="Phone Number *" class="input" required>
+        <button class="place-order-btn" id="placeOrderBtn">Place Order</button>
+      </div>
+      <div id="orderError" style="color:#ff5252;font-size:14px;margin-top:12px"></div>
+    </div>
+
+    <!-- FOOTER -->
     <div class="footer small">
-      © <span id="year"></span> MEEF MEATS • <a href="/admin" target="_blank" rel="noopener">Admin</a> • <a href="#">Instagram</a> • <a href="#">Terms</a> • <a href="#">Privacy</a>
-    </div>
-  </div>
-
-  <script src="/assets/main.js"></script>
-</body>
-</html>
+      © <span id="year"></span> MEEF MEATS • <a href="/admin" target="_blank" rel="noopener">Admi
