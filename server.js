@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Resend } from "resend";
+import { exportOrderToSheets, updateOrderInSheets } from "./sheets-exporter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -268,7 +269,9 @@ app.post("/api/orders", async (req, res) => {
       email: orderData.email,
       phone: orderData.phone,
       pickup_date: orderData.pickup_date,
-      items: orderData.items
+      items: orderData.items,
+      payment_method: "",
+      payment_received: false
     };
     
     const orders = readJSON(ORDERS_FILE);
@@ -289,6 +292,13 @@ app.post("/api/orders", async (req, res) => {
       await sendCustomerConfirmation(order);
     } catch (emailError) {
       console.error("Email sending failed, but order was saved:", emailError);
+    }
+
+    // 🔥 NEW: Export to Google Sheets
+    try {
+      await exportOrderToSheets(order);
+    } catch (sheetsError) {
+      console.error("Google Sheets export failed, but order was saved:", sheetsError);
     }
     
     res.json({ ok: true, order_id: order.id, total_cents: total });
@@ -336,7 +346,7 @@ app.get("/api/admin/orders", basicAuth, (req, res) => {
   }
 });
 
-app.put("/api/admin/orders/:id/status", basicAuth, (req, res) => {
+app.put("/api/admin/orders/:id/status", basicAuth, async (req, res) => {
   const orderId = req.params.id;
   const newStatus = req.body.status;
   
@@ -358,6 +368,13 @@ app.put("/api/admin/orders/:id/status", basicAuth, (req, res) => {
     
     if (!writeJSON(ORDERS_FILE, orders)) {
       return res.status(500).json({ ok: false, error: "Failed to update order" });
+    }
+
+    // 🔥 NEW: Update Google Sheets when status changes
+    try {
+      await updateOrderInSheets(orderId, { status: newStatus });
+    } catch (sheetsError) {
+      console.error("Google Sheets update failed:", sheetsError);
     }
     
     res.json({ ok: true, order: orders[orderIndex] });
@@ -408,4 +425,5 @@ app.use((req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log("MEEF MEATS running on port " + PORT);
   console.log("Resend configured:", resend ? "Yes" : "No");
+  console.log("Google Sheets configured:", process.env.GOOGLE_SHEET_ID ? "Yes" : "No");
 });
