@@ -59,6 +59,51 @@
     </div>
   </div>
 
+  <!-- Payment Methods Management -->
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:900">💳 Payment Methods</div>
+    </div>
+
+    <div class="payment-settings-grid">
+      <!-- VENMO -->
+      <div class="payment-setting-item">
+        <div class="payment-toggle">
+          <input type="checkbox" id="venmoEnabled">
+          <label for="venmoEnabled">Enable Venmo</label>
+        </div>
+        <input id="venmoUsername" class="input" placeholder="Venmo username (e.g., @MeefMeats)">
+      </div>
+
+      <!-- ZELLE -->
+      <div class="payment-setting-item">
+        <div class="payment-toggle">
+          <input type="checkbox" id="zelleEnabled">
+          <label for="zelleEnabled">Enable Zelle</label>
+        </div>
+        <input id="zelleInfo" class="input" placeholder="Zelle email or phone">
+      </div>
+
+      <!-- CASH -->
+      <div class="payment-setting-item">
+        <div class="payment-toggle">
+          <input type="checkbox" id="cashEnabled">
+          <label for="cashEnabled">Enable Cash at Pickup</label>
+        </div>
+        <textarea id="cashInstructions" placeholder="Custom cash instructions (optional)"></textarea>
+      </div>
+
+      <!-- PAYMENT NOTE -->
+      <div class="payment-setting-item">
+        <label class="small" style="display:block;margin-bottom:8px">ADDITIONAL PAYMENT NOTE (shown to customers)</label>
+        <textarea id="paymentNote" placeholder="Optional message shown to all customers after ordering"></textarea>
+      </div>
+
+      <button id="savePayment" class="btn">Save Payment Settings</button>
+      <span id="paymentMsg" class="small"></span>
+    </div>
+  </div>
+
   <!-- Orders Management -->
   <div class="card">
     <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:16px">
