@@ -30,7 +30,16 @@ if (!fs.existsSync(SETTINGS_FILE)) {
     JSON.stringify({
       instagram_url: "",
       contact: { phone: "", email: "", address: "" },
-      status_overrides: {}
+      status_overrides: {},
+      payment_methods: {
+        venmo_enabled: true,
+        venmo_username: "@MeefMeats",
+        zelle_enabled: true,
+        zelle_info: "orders@meefmeats.com",
+        cash_enabled: true,
+        cash_instructions: "Bring exact change if possible",
+        payment_note: "Your order is reserved but not confirmed until payment is received. Please complete payment within 24 hours."
+      }
     }, null, 2),
     "utf8"
   );
@@ -123,7 +132,7 @@ app.get("/api/products", (req, res) => {
   }]);
 });
 
-// Get public settings
+// Get public settings (including payment methods)
 app.get("/api/settings", (req, res) => {
   try {
     const settings = readJSON(SETTINGS_FILE);
@@ -172,6 +181,10 @@ app.post("/api/orders", (req, res) => {
   if (!orderData.email || !emailRegex.test(orderData.email)) {
     return res.status(400).json({ ok: false, error: "Invalid email address" });
   }
+
+  if (!orderData.phone) {
+    return res.status(400).json({ ok: false, error: "Phone number is required" });
+  }
   
   if (!orderData.pickup_date) {
     return res.status(400).json({ ok: false, error: "Missing pickup date" });
@@ -197,7 +210,7 @@ app.post("/api/orders", (req, res) => {
       total_cents: total,
       customer_name: orderData.customer_name,
       email: orderData.email,
-      phone: orderData.phone || "",
+      phone: orderData.phone,
       pickup_date: orderData.pickup_date,
       items: orderData.items
     };
@@ -283,7 +296,8 @@ app.put("/api/admin/settings", basicAuth, (req, res) => {
       ...existing,
       instagram_url: patch.instagram_url ?? existing.instagram_url,
       contact: { ...existing.contact, ...(patch.contact || {}) },
-      status_overrides: { ...existing.status_overrides, ...(patch.status_overrides || {}) }
+      status_overrides: { ...existing.status_overrides, ...(patch.status_overrides || {}) },
+      payment_methods: { ...existing.payment_methods, ...(patch.payment_methods || {}) }
     };
     
     if (!writeJSON(SETTINGS_FILE, merged)) {
