@@ -87,6 +87,10 @@
       cashEnabled.checked = pm.cash_enabled || false;
       cashInstructions.value = pm.cash_instructions || "";
       paymentNote.value = pm.payment_note || "";
+
+      // Load notification emails
+      const emails = settings.notification_emails || [];
+      renderEmailList(emails);
     } catch (error) {
       console.error('Error loading settings:', error);
       settingsMsg.textContent = "Error loading settings";
@@ -180,35 +184,12 @@
   // ==================== ORDERS MANAGEMENT ====================
   function rowHTML(order) {
     const items = (order.items || [])
-      .map(item => `${item.qty || 1}× ${item.size === "full" ? "Full" : "Half"} Turkey, ${item.flavor}`)
+      .map(item => item.qty + "x " + (item.size === "full" ? "Full" : "Half") + " Turkey, " + item.flavor)
       .join(", ");
     
     const createdDate = new Date(order.created_at).toLocaleString();
     
-    return `
-      <tr>
-        <td>
-          <div><strong>${order.id}</strong></div>
-          <div class="small">${createdDate}</div>
-        </td>
-        <td>
-          <div>${order.customer_name}</div>
-          <div class="small">${order.email}</div>
-          ${order.phone ? `<div class="small">${order.phone}</div>` : ''}
-        </td>
-        <td>${order.pickup_date}</td>
-        <td>${items}</td>
-        <td><strong>${toMoney(order.total_cents || 0)}</strong></td>
-        <td><span class="badge">${order.status}</span></td>
-        <td>
-          <select data-id="${order.id}" class="input statusSel">
-            ${["new", "confirmed", "preparing", "ready", "picked_up", "canceled"]
-              .map(s => `<option value="${s}" ${order.status === s ? "selected" : ""}>${s}</option>`)
-              .join("")}
-          </select>
-        </td>
-      </tr>
-    `;
+    return '<tr><td><div><strong>' + order.id + '</strong></div><div class="small">' + createdDate + '</div></td><td><div>' + order.customer_name + '</div><div class="small">' + order.email + '</div>' + (order.phone ? '<div class="small">' + order.phone + '</div>' : '') + '</td><td>' + order.pickup_date + '</td><td>' + items + '</td><td><strong>' + toMoney(order.total_cents || 0) + '</strong></td><td><span class="badge">' + order.status + '</span></td><td><select data-id="' + order.id + '" class="input statusSel">' + ["new", "confirmed", "preparing", "cooking", "ready", "picked_up", "canceled"].map(s => '<option value="' + s + '" ' + (order.status === s ? "selected" : "") + '>' + s + '</option>').join("") + '</select></td></tr>';
   }
 
   async function refreshOrders() {
@@ -240,15 +221,13 @@
           const orderId = select.getAttribute("data-id");
           
           try {
-            const result = await fetch(`/api/admin/orders/${orderId}/status`, {
+            const result = await fetch("/api/admin/orders/" + orderId + "/status", {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: select.value })
             }).then(r => r.json());
             
-            ordersMsg.textContent = result.ok ? 
-              "✓ Status updated" : 
-              `✗ ${result.error || 'Error'}`;
+            ordersMsg.textContent = result.ok ? "✓ Status updated" : "✗ " + (result.error || 'Error');
             ordersMsg.style.color = result.ok ? "#9ae6b4" : "#ff5252";
             
             setTimeout(() => ordersMsg.textContent = "", 2000);
@@ -264,13 +243,101 @@
         });
       });
       
-      ordersMsg.textContent = `Showing ${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''}`;
+      ordersMsg.textContent = "Showing " + filteredOrders.length + " order" + (filteredOrders.length !== 1 ? 's' : '');
       ordersMsg.style.color = "#bcbcbc";
     } catch (error) {
       console.error('Error refreshing orders:', error);
       ordersMsg.textContent = "✗ Failed to load orders";
       ordersMsg.style.color = "#ff5252";
     }
+  }
+
+  // ==================== EMAIL NOTIFICATIONS ====================
+  function renderEmailList(emails) {
+    const listDiv = document.getElementById("emailList");
+    
+    if (emails.length === 0) {
+      listDiv.innerHTML = '<div class="small" style="color:#666">No notification emails added yet</div>';
+      return;
+    }
+
+    listDiv.innerHTML = emails.map((email, index) => '<div class="payment-setting-item" style="display:flex;justify-content:space-between;align-items:center;padding:12px"><div><div style="font-weight:700">' + email + '</div><div class="small">Will receive order notifications</div></div><button class="btn danger" onclick="window.removeEmail(' + index + ')" style="padding:8px 12px">Remove</button></div>').join("");
+  }
+
+  window.removeEmail = async function(index) {
+    try {
+      const settings = await fetch("/api/admin/settings").then(r => r.json());
+      const emails = settings.notification_emails || [];
+      emails.splice(index, 1);
+
+      const result = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notification_emails: emails })
+      }).then(r => r.json());
+
+      if (result.ok) {
+        renderEmailList(emails);
+        showEmailMessage("✓ Email removed", "#9ae6b4");
+      } else {
+        showEmailMessage("✗ Failed to remove email", "#ff5252");
+      }
+    } catch (error) {
+      console.error("Error removing email:", error);
+      showEmailMessage("✗ Network error", "#ff5252");
+    }
+  };
+
+  document.getElementById("addEmail").addEventListener("click", async () => {
+    const emailInput = document.getElementById("newEmail");
+    const email = emailInput.value.trim();
+
+    if (!email) {
+      showEmailMessage("✗ Please enter an email", "#ff5252");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showEmailMessage("✗ Invalid email format", "#ff5252");
+      return;
+    }
+
+    try {
+      const settings = await fetch("/api/admin/settings").then(r => r.json());
+      const emails = settings.notification_emails || [];
+
+      if (emails.includes(email)) {
+        showEmailMessage("✗ Email already added", "#ff5252");
+        return;
+      }
+
+      emails.push(email);
+
+      const result = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notification_emails: emails })
+      }).then(r => r.json());
+
+      if (result.ok) {
+        emailInput.value = "";
+        renderEmailList(emails);
+        showEmailMessage("✓ Email added successfully", "#9ae6b4");
+      } else {
+        showEmailMessage("✗ Failed to add email", "#ff5252");
+      }
+    } catch (error) {
+      console.error("Error adding email:", error);
+      showEmailMessage("✗ Network error", "#ff5252");
+    }
+  });
+
+  function showEmailMessage(msg, color) {
+    const emailMsg = document.getElementById("emailMsg");
+    emailMsg.textContent = msg;
+    emailMsg.style.color = color;
+    setTimeout(() => emailMsg.textContent = "", 3000);
   }
 
   // ==================== INITIALIZATION ====================
