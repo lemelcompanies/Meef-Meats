@@ -84,9 +84,9 @@ function writeJSON(filePath, data) {
   }
 }
 
-async function sendOrderNotification(order) {
+async function sendAdminNotification(order) {
   if (!resend) {
-    console.log("Resend not configured, skipping email");
+    console.log("Resend not configured, skipping admin email");
     return;
   }
 
@@ -107,45 +107,7 @@ async function sendOrderNotification(order) {
     return "  - " + item.qty + "x " + sizeLabel + " Turkey - " + item.flavor + " ($" + (price / 100).toFixed(2) + ")";
   }).join("\n");
 
-  const emailHTML = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 20px;">
-      <div style="background: #000; color: #fff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">🍖 New MEEF MEATS Order</h1>
-      </div>
-      
-      <div style="background: #fff; padding: 30px; border-radius: 0 0 10px 10px;">
-        <h2 style="color: #000; margin-top: 0;">Order ${order.id}</h2>
-        <p style="color: #666;">Placed on ${orderDate.toLocaleDateString()} at ${orderDate.toLocaleTimeString()}</p>
-        
-        <hr style="border: 1px solid #eee; margin: 20px 0;">
-        
-        <h3 style="color: #000;">Customer Information</h3>
-        <ul style="color: #333; line-height: 1.8;">
-          <li><strong>Name:</strong> ${order.customer_name}</li>
-          <li><strong>Email:</strong> ${order.email}</li>
-          <li><strong>Phone:</strong> ${order.phone}</li>
-          <li><strong>Pickup Date:</strong> ${pickupDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</li>
-        </ul>
-        
-        <h3 style="color: #000; margin-top: 20px;">Order Details</h3>
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; font-family: monospace;">
-${itemsList}
-        </div>
-        
-        <div style="margin-top: 20px; padding: 15px; background: #000; color: #fff; border-radius: 8px; text-align: center;">
-          <h2 style="margin: 0; font-size: 28px;">Total: $${(order.total_cents / 100).toFixed(2)}</h2>
-        </div>
-        
-        <div style="margin-top: 20px; text-align: center;">
-          <a href="https://meef-meats.onrender.com/admin" style="display: inline-block; background: #000; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">View in Admin Panel</a>
-        </div>
-      </div>
-      
-      <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>MEEF MEATS - Pure Texas. Pure Turkey.</p>
-      </div>
-    </div>
-  `;
+  const emailHTML = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 20px;"><div style="background: #000; color: #fff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;"><h1 style="margin: 0; font-size: 24px;">🍖 New MEEF MEATS Order</h1></div><div style="background: #fff; padding: 30px; border-radius: 0 0 10px 10px;"><h2 style="color: #000; margin-top: 0;">Order ' + order.id + '</h2><p style="color: #666;">Placed on ' + orderDate.toLocaleDateString() + ' at ' + orderDate.toLocaleTimeString() + '</p><hr style="border: 1px solid #eee; margin: 20px 0;"><h3 style="color: #000;">Customer Information</h3><ul style="color: #333; line-height: 1.8;"><li><strong>Name:</strong> ' + order.customer_name + '</li><li><strong>Email:</strong> ' + order.email + '</li><li><strong>Phone:</strong> ' + order.phone + '</li><li><strong>Pickup Date:</strong> ' + pickupDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '</li></ul><h3 style="color: #000; margin-top: 20px;">Order Details</h3><div style="background: #f9f9f9; padding: 15px; border-radius: 8px; font-family: monospace;">' + itemsList + '</div><div style="margin-top: 20px; padding: 15px; background: #000; color: #fff; border-radius: 8px; text-align: center;"><h2 style="margin: 0; font-size: 28px;">Total: $' + (order.total_cents / 100).toFixed(2) + '</h2></div><div style="margin-top: 20px; text-align: center;"><a href="https://meef-meats.onrender.com/admin" style="display: inline-block; background: #000; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">View in Admin Panel</a></div></div><div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;"><p>MEEF MEATS - Pure Texas. Pure Turkey.</p></div></div>';
 
   try {
     for (const email of notificationEmails) {
@@ -155,10 +117,53 @@ ${itemsList}
         subject: "New Order - " + order.id + " - $" + (order.total_cents / 100).toFixed(2),
         html: emailHTML
       });
-      console.log("Email sent to:", email);
+      console.log("Admin notification sent to:", email);
     }
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error sending admin email:", error);
+  }
+}
+
+async function sendCustomerConfirmation(order) {
+  if (!resend) {
+    console.log("Resend not configured, skipping customer email");
+    return;
+  }
+
+  const settings = readJSON(SETTINGS_FILE);
+  const payment = settings.payment_methods || {};
+  const orderDate = new Date(order.created_at);
+  const pickupDate = new Date(order.pickup_date + "T00:00:00");
+  
+  const itemsList = order.items.map(item => {
+    const price = item.size === "half" ? 3000 : 5000;
+    const sizeLabel = item.size === "full" ? "Full" : "Half";
+    return '<div style="margin: 8px 0; padding: 12px; background: #f9f9f9; border-radius: 8px;"><strong>' + item.qty + 'x ' + sizeLabel + ' Turkey</strong><br><span style="color: #666;">Flavor: ' + item.flavor + ' • $' + (price / 100).toFixed(2) + ' each</span></div>';
+  }).join("");
+
+  let paymentHTML = "";
+  if (payment.venmo_enabled) {
+    paymentHTML += '<div style="margin-bottom: 16px; padding: 16px; background: #f0f8ff; border-left: 4px solid #3d95ce; border-radius: 4px;"><strong style="color: #3d95ce;">💙 Venmo:</strong> Send $' + (order.total_cents / 100).toFixed(2) + ' to <strong>' + (payment.venmo_username || "@MeefMeats") + '</strong></div>';
+  }
+  if (payment.zelle_enabled) {
+    paymentHTML += '<div style="margin-bottom: 16px; padding: 16px; background: #f5f0ff; border-left: 4px solid #6d1ed4; border-radius: 4px;"><strong style="color: #6d1ed4;">💜 Zelle:</strong> Send $' + (order.total_cents / 100).toFixed(2) + ' to <strong>' + (payment.zelle_info || "orders@meefmeats.com") + '</strong></div>';
+  }
+  if (payment.cash_enabled) {
+    paymentHTML += '<div style="margin-bottom: 16px; padding: 16px; background: #f0fff4; border-left: 4px solid #9ae6b4; border-radius: 4px;"><strong style="color: #16a34a;">💚 Cash:</strong> Pay $' + (order.total_cents / 100).toFixed(2) + ' at pickup' + (payment.cash_instructions ? '<br><span style="font-size: 12px; color: #666;">' + payment.cash_instructions + '</span>' : '') + '</div>';
+  }
+
+  const emailHTML = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 20px;"><div style="background: #000; color: #fff; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"><h1 style="margin: 0; font-size: 32px;">🍖</h1><h2 style="margin: 10px 0 5px 0; font-size: 24px;">Order Confirmed!</h2><p style="margin: 0; opacity: 0.9;">Thank you for your order</p></div><div style="background: #fff; padding: 30px; border-radius: 0 0 10px 10px;"><div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;"><div style="font-size: 14px; color: #666; margin-bottom: 5px;">Order Number</div><div style="font-size: 24px; font-weight: 900; color: #000;">' + order.id + '</div></div><h3 style="color: #000; margin-top: 20px;">Your Order</h3>' + itemsList + '<div style="margin: 20px 0; padding: 20px; background: #000; color: #fff; border-radius: 8px; text-align: center;"><div style="font-size: 14px; opacity: 0.8; margin-bottom: 5px;">Total Amount</div><div style="font-size: 32px; font-weight: 900;">$' + (order.total_cents / 100).toFixed(2) + '</div></div><h3 style="color: #000; margin-top: 30px;">Pickup Details</h3><div style="background: #f9f9f9; padding: 15px; border-radius: 8px;"><p style="margin: 8px 0;"><strong>📅 Date:</strong> ' + pickupDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '</p><p style="margin: 8px 0;"><strong>🕐 Time:</strong> 7:00 AM - 10:30 AM</p><p style="margin: 8px 0;"><strong>👤 Name:</strong> ' + order.customer_name + '</p></div><h3 style="color: #000; margin-top: 30px;">Payment Instructions</h3>' + paymentHTML + (payment.payment_note ? '<div style="background: #fff9e6; border: 1px solid #ffd966; border-radius: 8px; padding: 15px; margin-top: 15px; font-size: 13px; color: #666;"><strong style="color: #000;">⚠️ Important:</strong> ' + payment.payment_note + '</div>' : '') + '<div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px; text-align: center;"><p style="margin: 0 0 15px 0; color: #666;">Track your order anytime</p><a href="https://meef-meats.onrender.com/track.html?order=' + order.id + '" style="display: inline-block; background: #000; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Track Order</a></div></div><div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;"><p style="margin: 5px 0;">MEEF MEATS</p><p style="margin: 5px 0;">Pure Texas. Pure Turkey.</p><p style="margin: 10px 0 5px 0;">Questions? Reply to this email</p></div></div>';
+
+  try {
+    await resend.emails.send({
+      from: "MEEF MEATS <orders@resend.dev>",
+      to: order.email,
+      subject: "Order Confirmation - " + order.id + " - MEEF MEATS",
+      html: emailHTML
+    });
+    console.log("Customer confirmation sent to:", order.email);
+  } catch (error) {
+    console.error("Error sending customer email:", error);
   }
 }
 
@@ -276,7 +281,8 @@ app.post("/api/orders", async (req, res) => {
       return res.status(500).json({ ok: false, error: "Failed to save order" });
     }
 
-    await sendOrderNotification(order);
+    await sendAdminNotification(order);
+    await sendCustomerConfirmation(order);
     
     res.json({ ok: true, order_id: order.id, total_cents: total });
   } catch (error) {
