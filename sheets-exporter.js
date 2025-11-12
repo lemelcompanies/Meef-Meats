@@ -1,24 +1,22 @@
 import { google } from 'googleapis';
-import fs from 'fs';
-import path from 'path';
 
 // Configuration
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
-const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH || './google-credentials.json';
+const CREDENTIALS_JSON = process.env.GOOGLE_CREDENTIALS_JSON;
 
 /**
  * Initialize Google Sheets API
  */
 async function getGoogleSheetsClient() {
   try {
-    // Check if credentials file exists
-    if (!fs.existsSync(CREDENTIALS_PATH)) {
-      console.error('Google credentials file not found at:', CREDENTIALS_PATH);
+    // Check if credentials are available
+    if (!CREDENTIALS_JSON) {
+      console.error('GOOGLE_CREDENTIALS_JSON environment variable not set');
       return null;
     }
 
-    // Load credentials
-    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
+    // Parse credentials from environment variable
+    const credentials = JSON.parse(CREDENTIALS_JSON);
 
     // Create auth client
     const auth = new google.auth.GoogleAuth({
