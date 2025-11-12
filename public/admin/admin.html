@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MEEF MEATS Admin</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="h1" style="font-weight:900;margin:6px 0 14px">MEEF MEATS Admin</div>
+
+  <!-- Stock Status Management -->
+  <div class="card">
+    <div class="row" style="flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="small">Pickup date (3 weeks out Fri-Sun):</div>
+        <select id="dateSel" class="input"></select>
+      </div>
+
+      <div>
+        <label class="small">Full Turkey Status</label>
+        <select id="statusFull" class="input">
+          <option value="ok">In stock</option>
+          <option value="low">Low stock</option>
+          <option value="out">Sold out</option>
+        </select>
+      </div>
+      
+      <div>
+        <label class="small">Half Turkey Status</label>
+        <select id="statusHalf" class="input">
+          <option value="ok">In stock</option>
+          <option value="low">Low stock</option>
+          <option value="out">Sold out</option>
+        </select>
+      </div>
+
+      <div class="row" style="gap:8px">
+        <span class="small">Preview:</span>
+        <span id="badgeFull" class="stockchip stock-ok">Full: In stock</span>
+        <span id="badgeHalf" class="stockchip stock-ok">Half: In stock</span>
+      </div>
+
+      <button id="saveStatus" class="btn">Save Status</button>
+      <span id="statusMsg" class="small"></span>
+    </div>
+  </div>
+
+  <!-- Contact & Settings Management -->
+  <div class="card">
+    <div class="row" style="flex-wrap:wrap;gap:12px">
+      <input id="contactPhone" class="input" placeholder="Phone" style="min-width:200px">
+      <input id="contactEmail" class="input" placeholder="Email" type="email" style="min-width:240px">
+      <input id="contactAddr" class="input" placeholder="Address" style="min-width:320px">
+      <input id="igUrl" class="input" placeholder="Instagram URL" style="min-width:320px">
+      <button id="saveSettings" class="btn">Save Contact Info</button>
+      <span id="settingsMsg" class="small"></span>
+    </div>
+  </div>
+
+  <!-- Orders Management -->
+  <div class="card">
+    <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <select id="filterStatus" class="input">
+        <option value="">All statuses</option>
+        <option value="new">new</option>
+        <option value="confirmed">confirmed</option>
+        <option value="preparing">preparing</option>
+        <option value="ready">ready</option>
+        <option value="picked_up">picked_up</option>
+        <option value="canceled">canceled</option>
+      </select>
+      <input id="search" class="input" placeholder="Search name or order ID" style="min-width:260px">
+      <button id="refresh" class="btn">Refresh Orders</button>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="table" id="ordersTbl">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Pickup Date</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Update Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="small" id="ordersMsg" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<script src="/assets/admin.js"></script>
+</body>
+</html>
