@@ -1,0 +1,585 @@
+/* ==================== VARIABLES ==================== */
+:root {
+  --bg: #0b0b0b;
+  --card: #111111;
+  --muted: #bcbcbc;
+  --text: #f5f5f5;
+  --accent: #ffffff;
+  --danger: #ff5252;
+  --success: #9ae6b4;
+  --warning: #ffcc66;
+  --border: #2a2a2a;
+}
+
+/* ==================== RESET & BASE ==================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 
+               "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: #fff;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ==================== LAYOUT ==================== */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-top-space {
+  padding-top: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.row.start {
+  align-items: flex-start;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* ==================== HEADER / TOPBAR ==================== */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.center-brand {
+  justify-self: center;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+/* ==================== MENU ==================== */
+.menu-wrap {
+  position: relative;
+  justify-self: start;
+}
+
+.menu-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0f0f0f;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.menu-btn:hover {
+  background: #1a1a1a;
+}
+
+.menu-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.menu-icon .bar {
+  width: 18px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+  transition: all 0.2s ease;
+}
+
+.menu-icon .chev {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #fff;
+  margin-top: 2px;
+}
+
+.dropdown {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 10px;
+  min-width: 180px;
+  display: none;
+  flex-direction: column;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  overflow: hidden;
+}
+
+.dropdown.open {
+  display: flex;
+}
+
+.dropdown a {
+  padding: 10px 12px;
+  border-bottom: 1px solid #1b1b1b;
+  color: #f5f5f5;
+  transition: background 0.2s ease;
+}
+
+.dropdown a:hover {
+  background: #1a1a1a;
+  opacity: 1;
+}
+
+.dropdown a:last-child {
+  border-bottom: 0;
+}
+
+/* ==================== CARDS ==================== */
+.card {
+  background: var(--card);
+  border: 1px solid #1e1e1e;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* ==================== TYPOGRAPHY ==================== */
+h1 {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.2;
+  margin: 6px 0 4px;
+}
+
+h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.h1 {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.kicker {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.price {
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  font-size: 16px;
+}
+
+/* ==================== BADGES & CHIPS ==================== */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #1b1b1b;
+  color: var(--muted);
+  font-size: 12px;
+  border: 1px solid #222;
+  white-space: nowrap;
+}
+
+.stockchip {
+  display: inline-block;
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stock-ok {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.stock-low {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.stock-out {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ==================== BUTTONS ==================== */
+.btn {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  color: #000;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.05s ease, background 0.2s ease;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  background: #f0f0f0;
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn.secondary {
+  background: #0f0f0f;
+  color: #fff;
+  border-color: var(--border);
+}
+
+.btn.secondary:hover {
+  background: #1a1a1a;
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.btn.danger:hover {
+  background: #ff3838;
+}
+
+/* ==================== PILLS & SELECTORS ==================== */
+.pill {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.pill:hover {
+  border-color: #4a4a4a;
+}
+
+.pill.active {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  font-weight: 700;
+}
+
+.size-wrap {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.size-pill {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 12px 16px;
+  background: #0b0b0b;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.size-pill:hover {
+  border-color: #4a4a4a;
+  background: #151515;
+}
+
+.size-pill.active {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  font-weight: 800;
+}
+
+/* ==================== DAY BUTTONS ==================== */
+.day-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.day-btn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #0b0b0b;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.day-btn:hover {
+  filter: brightness(1.15);
+  border-color: #4a4a4a;
+}
+
+.day-btn.active {
+  border-color: #fff;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ==================== FORMS ==================== */
+.input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0b0b0b;
+  color: #fff;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4a4a4a;
+}
+
+.input::placeholder {
+  color: #666;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ==================== HERO SECTION ==================== */
+.hero {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.hero h1 {
+  margin: 6px 0 4px;
+}
+
+.hero-illus {
+  min-width: 240px;
+  flex: 1;
+}
+
+/* ==================== CART ==================== */
+.cart {
+  position: sticky;
+  top: 16px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #222;
+  margin: 12px 0;
+}
+
+/* ==================== TABLES ==================== */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.table th,
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid #222;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: top;
+}
+
+.table th {
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background: #151515;
+}
+
+.table td:first-child {
+  font-weight: 600;
+}
+
+/* ==================== FOOTER ==================== */
+.footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+  border-top: 1px solid #1e1e1e;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .topbar {
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+  }
+
+  .center-brand {
+    font-size: 16px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .hero {
+    flex-direction: column;
+  }
+
+  .hero-illus {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .cart {
+    position: static;
+  }
+
+  .row.start {
+    flex-direction: column;
+  }
+
+  .size-wrap {
+    width: 100%;
+  }
+
+  .size-pill {
+    flex: 1;
+    text-align: center;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .pill {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .input {
+    font-size: 16px;
+  }
+}
+
+/* ==================== UTILITIES ==================== */
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+
+.p-1 { padding: 8px; }
+.p-2 { padding: 16px; }
+.p-3 { padding: 24px; }
