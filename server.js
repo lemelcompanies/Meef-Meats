@@ -171,16 +171,33 @@ function generateAllowedDates() {
   const dates = [];
   const today = new Date();
   
-  for (let i = 21; i <= 23; i++) {
-    const futureDate = new Date(today);
-    futureDate.setDate(today.getDate() + i);
-    
-    const dayOfWeek = futureDate.getDay();
-    if (dayOfWeek >= 5 || dayOfWeek === 0) {
-      const isoDate = futureDate.toISOString().split("T")[0];
-      dates.push(isoDate);
-    }
-  }
+  // Calculate 3 weeks from today (21 days)
+  const threeWeeksOut = new Date(today);
+  threeWeeksOut.setDate(today.getDate() + 21);
+  
+  // Find what day of week 3 weeks out is
+  const dayOfWeek = threeWeeksOut.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  
+  // Calculate days until Friday (day 5)
+  let daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+  if (daysUntilFriday === 0 && dayOfWeek !== 5) daysUntilFriday = 7;
+  
+  // Get the Friday 3 weeks out
+  const friday = new Date(threeWeeksOut);
+  friday.setDate(threeWeeksOut.getDate() + daysUntilFriday);
+  
+  // Saturday is the next day
+  const saturday = new Date(friday);
+  saturday.setDate(friday.getDate() + 1);
+  
+  // Sunday is two days after Friday
+  const sunday = new Date(friday);
+  sunday.setDate(friday.getDate() + 2);
+  
+  // Add all three dates
+  dates.push(friday.toISOString().split("T")[0]);
+  dates.push(saturday.toISOString().split("T")[0]);
+  dates.push(sunday.toISOString().split("T")[0]);
   
   return dates;
 }
