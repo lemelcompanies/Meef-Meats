@@ -18,21 +18,3 @@
     "node": ">=18.0.0"
   }
 }
-```
-
-Click **"Commit changes"**
-
----
-
-### FILE 2: `.gitignore`
-
-**Path:** `.gitignore`
-```
-node_modules/
-data/
-.env
-.env.local
-*.log
-.DS_Store
-.vscode/
-*.tmp
