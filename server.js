@@ -244,4 +244,59 @@ app.put("/api/admin/orders/:id/status", basicAuth, (req, res) => {
     const orders = readJSON(ORDERS_FILE);
     const orderIndex = orders.findIndex(o => o.id === orderId);
     
-    if (orderIndex <
+    if (orderIndex < 0) {
+      return res.status(404).json({ ok: false, error: "Order not found" });
+    }
+    
+    orders[orderIndex].status = newStatus;
+    
+    if (!writeJSON(ORDERS_FILE, orders)) {
+      return res.status(500).json({ ok: false, error: "Failed to update order" });
+    }
+    
+    res.json({ ok: true, order: orders[orderIndex] });
+  } catch (error) {
+    console.error("Status update error:", error);
+    res.status(500).json({ ok: false, error: "Failed to update order status" });
+  }
+});
+
+app.get("/api/admin/settings", basicAuth, (req, res) => {
+  try {
+    const settings = readJSON(SETTINGS_FILE);
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: "Failed to load settings" });
+  }
+});
+
+app.put("/api/admin/settings", basicAuth, (req, res) => {
+  try {
+    const existing = readJSON(SETTINGS_FILE);
+    const patch = req.body || {};
+    
+    const merged = {
+      instagram_url: patch.instagram_url !== undefined ? patch.instagram_url : existing.instagram_url,
+      contact: Object.assign({}, existing.contact, patch.contact || {}),
+      status_overrides: Object.assign({}, existing.status_overrides, patch.status_overrides || {}),
+      payment_methods: Object.assign({}, existing.payment_methods, patch.payment_methods || {})
+    };
+    
+    if (!writeJSON(SETTINGS_FILE, merged)) {
+      return res.status(500).json({ ok: false, error: "Failed to save settings" });
+    }
+    
+    res.json({ ok: true, settings: merged });
+  } catch (error) {
+    console.error("Settings update error:", error);
+    res.status(500).json({ ok: false, error: "Failed to update settings" });
+  }
+});
+
+app.use((req, res) => {
+  res.status(404).json({ ok: false, error: "Route not found" });
+});
+
+app.listen(PORT, () => {
+  console.log("MEEF MEATS running on port " + PORT);
+});
