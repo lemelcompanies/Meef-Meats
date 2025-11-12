@@ -44,12 +44,15 @@ if (!fs.existsSync(SETTINGS_FILE)) {
 }
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 
 function basicAuth(req, res, next) {
   const auth = req.headers.authorization || "";
   const expected = "Basic " + Buffer.from("admin:" + ADMIN_PASSWORD).toString("base64");
-  if (auth === expected) return next();
+  
+  if (auth === expected) {
+    return next();
+  }
+  
   res.set("WWW-Authenticate", 'Basic realm="MEEF Admin"');
   return res.status(401).send("Authentication required.");
 }
@@ -219,7 +222,12 @@ app.get("/admin", basicAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin", "admin.html"));
 });
 
-app.use("/admin", basicAuth, express.static(path.join(__dirname, "public", "admin")));
+app.get("/admin/*", basicAuth, (req, res, next) => {
+  const filePath = req.path.replace("/admin", "");
+  res.sendFile(path.join(__dirname, "public", "admin", filePath));
+});
+
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/admin/orders", basicAuth, (req, res) => {
   try {
