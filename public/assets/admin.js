@@ -47,16 +47,28 @@
   const refreshBtn = document.getElementById("refresh");
   const ordersMsg = document.getElementById("ordersMsg");
 
+  // Payment method elements
+  const venmoEnabled = document.getElementById("venmoEnabled");
+  const venmoUsername = document.getElementById("venmoUsername");
+  const zelleEnabled = document.getElementById("zelleEnabled");
+  const zelleInfo = document.getElementById("zelleInfo");
+  const cashEnabled = document.getElementById("cashEnabled");
+  const cashInstructions = document.getElementById("cashInstructions");
+  const paymentNote = document.getElementById("paymentNote");
+  const paymentMsg = document.getElementById("paymentMsg");
+
   // ==================== SETTINGS MANAGEMENT ====================
   async function loadSettings() {
     try {
       const settings = await fetch("/api/admin/settings").then(r => r.json());
       
+      // Load contact info
       contactPhone.value = settings.contact?.phone || "";
       contactEmail.value = settings.contact?.email || "";
       contactAddr.value = settings.contact?.address || "";
       igUrl.value = settings.instagram_url || "";
       
+      // Load stock status overrides
       const overrides = settings.status_overrides || {};
       const dateOverride = overrides[dateSel.value] || {};
       
@@ -65,6 +77,16 @@
       
       applyBadge(badgeFull, statusFull.value, "Full");
       applyBadge(badgeHalf, statusHalf.value, "Half");
+
+      // Load payment methods
+      const pm = settings.payment_methods || {};
+      venmoEnabled.checked = pm.venmo_enabled || false;
+      venmoUsername.value = pm.venmo_username || "";
+      zelleEnabled.checked = pm.zelle_enabled || false;
+      zelleInfo.value = pm.zelle_info || "";
+      cashEnabled.checked = pm.cash_enabled || false;
+      cashInstructions.value = pm.cash_instructions || "";
+      paymentNote.value = pm.payment_note || "";
     } catch (error) {
       console.error('Error loading settings:', error);
       settingsMsg.textContent = "Error loading settings";
@@ -125,10 +147,40 @@
     }
   }
 
+  async function savePaymentSettings() {
+    try {
+      const body = {
+        payment_methods: {
+          venmo_enabled: venmoEnabled.checked,
+          venmo_username: venmoUsername.value,
+          zelle_enabled: zelleEnabled.checked,
+          zelle_info: zelleInfo.value,
+          cash_enabled: cashEnabled.checked,
+          cash_instructions: cashInstructions.value,
+          payment_note: paymentNote.value
+        }
+      };
+
+      const result = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }).then(r => r.json());
+
+      paymentMsg.textContent = result.ok ? "✓ Payment settings saved" : "✗ Error";
+      paymentMsg.style.color = result.ok ? "#9ae6b4" : "#ff5252";
+      setTimeout(() => paymentMsg.textContent = "", 2000);
+    } catch (error) {
+      console.error('Error saving payment settings:', error);
+      paymentMsg.textContent = "✗ Network error";
+      paymentMsg.style.color = "#ff5252";
+    }
+  }
+
   // ==================== ORDERS MANAGEMENT ====================
   function rowHTML(order) {
     const items = (order.items || [])
-      .map(item => `${item.qty || 1}× ${item.size} ${item.flavor}`)
+      .map(item => `${item.qty || 1}× ${item.size === "full" ? "Full" : "Half"} Turkey, ${item.flavor}`)
       .join(", ");
     
     const createdDate = new Date(order.created_at).toLocaleString();
@@ -237,7 +289,7 @@
       await loadSettings();
       await refreshOrders();
 
-      // Event listeners
+      // Event listeners - Contact & Stock
       document.getElementById("saveStatus").addEventListener("click", saveStatus);
       document.getElementById("saveSettings").addEventListener("click", saveSettings);
       document.getElementById("refresh").addEventListener("click", refreshOrders);
@@ -253,6 +305,9 @@
       statusHalf.addEventListener("change", () => {
         applyBadge(badgeHalf, statusHalf.value, "Half");
       });
+
+      // Event listener - Payment Settings
+      document.getElementById("savePayment").addEventListener("click", savePaymentSettings);
     } catch (error) {
       console.error('Initialization error:', error);
       alert('Failed to initialize admin panel. Please refresh the page.');
