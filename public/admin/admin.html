@@ -104,6 +104,26 @@
     </div>
   </div>
 
+  <!-- Email Notifications -->
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:900">📧 Email Notifications</div>
+    </div>
+
+    <div class="small" style="margin-bottom:16px">Receive emails when new orders are placed</div>
+
+    <div id="emailList" style="margin-bottom:16px">
+      <!-- Email list will be inserted here -->
+    </div>
+
+    <div style="display:flex;gap:12px;margin-bottom:12px">
+      <input id="newEmail" class="input" placeholder="Enter email address" type="email" style="flex:1">
+      <button id="addEmail" class="btn">Add Email</button>
+    </div>
+
+    <span id="emailMsg" class="small"></span>
+  </div>
+
   <!-- Orders Management -->
   <div class="card">
     <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:16px">
@@ -112,6 +132,7 @@
         <option value="new">new</option>
         <option value="confirmed">confirmed</option>
         <option value="preparing">preparing</option>
+        <option value="cooking">cooking</option>
         <option value="ready">ready</option>
         <option value="picked_up">picked_up</option>
         <option value="canceled">canceled</option>
