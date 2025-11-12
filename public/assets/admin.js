@@ -1,1 +1,264 @@
+(() => {
+  // Utility functions
+  function toMoney(cents) {
+    return "$" + (cents / 100).toFixed(2);
+  }
+  
+  function applyBadge(element, value, label) {
+    element.classList.remove("stock-ok", "stock-low", "stock-out");
+    
+    if (value === "out") {
+      element.classList.add("stock-out");
+      element.textContent = label + ": Sold out";
+    } else if (value === "low") {
+      element.classList.add("stock-low");
+      element.textContent = label + ": Low stock";
+    } else {
+      element.classList.add("stock-ok");
+      element.textContent = label + ": In stock";
+    }
+  }
+  
+  async function allowedDates() {
+    try {
+      return await fetch("/api/allowed-dates").then(r => r.json());
+    } catch (error) {
+      console.error('Error loading dates:', error);
+      return [];
+    }
+  }
 
+  // DOM Elements
+  const dateSel = document.getElementById("dateSel");
+  const statusFull = document.getElementById("statusFull");
+  const statusHalf = document.getElementById("statusHalf");
+  const badgeFull = document.getElementById("badgeFull");
+  const badgeHalf = document.getElementById("badgeHalf");
+  const statusMsg = document.getElementById("statusMsg");
+
+  const contactPhone = document.getElementById("contactPhone");
+  const contactEmail = document.getElementById("contactEmail");
+  const contactAddr = document.getElementById("contactAddr");
+  const igUrl = document.getElementById("igUrl");
+  const settingsMsg = document.getElementById("settingsMsg");
+
+  const filterStatus = document.getElementById("filterStatus");
+  const search = document.getElementById("search");
+  const refreshBtn = document.getElementById("refresh");
+  const ordersMsg = document.getElementById("ordersMsg");
+
+  // ==================== SETTINGS MANAGEMENT ====================
+  async function loadSettings() {
+    try {
+      const settings = await fetch("/api/admin/settings").then(r => r.json());
+      
+      contactPhone.value = settings.contact?.phone || "";
+      contactEmail.value = settings.contact?.email || "";
+      contactAddr.value = settings.contact?.address || "";
+      igUrl.value = settings.instagram_url || "";
+      
+      const overrides = settings.status_overrides || {};
+      const dateOverride = overrides[dateSel.value] || {};
+      
+      statusFull.value = dateOverride.full || "ok";
+      statusHalf.value = dateOverride.half || "ok";
+      
+      applyBadge(badgeFull, statusFull.value, "Full");
+      applyBadge(badgeHalf, statusHalf.value, "Half");
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      settingsMsg.textContent = "Error loading settings";
+      settingsMsg.style.color = "#ff5252";
+    }
+  }
+
+  async function saveSettings() {
+    try {
+      const body = {
+        instagram_url: igUrl.value,
+        contact: {
+          phone: contactPhone.value,
+          email: contactEmail.value,
+          address: contactAddr.value
+        }
+      };
+      
+      const result = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }).then(r => r.json());
+      
+      settingsMsg.textContent = result.ok ? "✓ Saved" : "✗ Error";
+      settingsMsg.style.color = result.ok ? "#9ae6b4" : "#ff5252";
+      setTimeout(() => settingsMsg.textContent = "", 2000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      settingsMsg.textContent = "✗ Network error";
+      settingsMsg.style.color = "#ff5252";
+    }
+  }
+
+  async function saveStatus() {
+    try {
+      const current = await fetch("/api/admin/settings").then(r => r.json());
+      const overrides = current.status_overrides || {};
+      
+      overrides[dateSel.value] = {
+        full: statusFull.value,
+        half: statusHalf.value
+      };
+      
+      const result = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status_overrides: overrides })
+      }).then(r => r.json());
+      
+      statusMsg.textContent = result.ok ? "✓ Status saved" : "✗ Error";
+      statusMsg.style.color = result.ok ? "#9ae6b4" : "#ff5252";
+      setTimeout(() => statusMsg.textContent = "", 2000);
+    } catch (error) {
+      console.error('Error saving status:', error);
+      statusMsg.textContent = "✗ Network error";
+      statusMsg.style.color = "#ff5252";
+    }
+  }
+
+  // ==================== ORDERS MANAGEMENT ====================
+  function rowHTML(order) {
+    const items = (order.items || [])
+      .map(item => `${item.qty || 1}× ${item.size} ${item.flavor}`)
+      .join(", ");
+    
+    const createdDate = new Date(order.created_at).toLocaleString();
+    
+    return `
+      <tr>
+        <td>
+          <div><strong>${order.id}</strong></div>
+          <div class="small">${createdDate}</div>
+        </td>
+        <td>
+          <div>${order.customer_name}</div>
+          <div class="small">${order.email}</div>
+          ${order.phone ? `<div class="small">${order.phone}</div>` : ''}
+        </td>
+        <td>${order.pickup_date}</td>
+        <td>${items}</td>
+        <td><strong>${toMoney(order.total_cents || 0)}</strong></td>
+        <td><span class="badge">${order.status}</span></td>
+        <td>
+          <select data-id="${order.id}" class="input statusSel">
+            ${["new", "confirmed", "preparing", "ready", "picked_up", "canceled"]
+              .map(s => `<option value="${s}" ${order.status === s ? "selected" : ""}>${s}</option>`)
+              .join("")}
+          </select>
+        </td>
+      </tr>
+    `;
+  }
+
+  async function refreshOrders() {
+    try {
+      const data = await fetch("/api/admin/orders").then(r => r.json());
+      const orders = data.orders || [];
+      
+      const query = (search.value || "").toLowerCase();
+      const statusFilter = filterStatus.value;
+      
+      const filteredOrders = orders
+        .filter(o => !statusFilter || o.status === statusFilter)
+        .filter(o => !query || 
+          o.id.toLowerCase().includes(query) || 
+          (o.customer_name || "").toLowerCase().includes(query))
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+      
+      const tbody = document.querySelector("#ordersTbl tbody");
+      
+      if (filteredOrders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px">No orders found</td></tr>';
+      } else {
+        tbody.innerHTML = filteredOrders.map(rowHTML).join("");
+      }
+      
+      // Attach status change handlers
+      document.querySelectorAll(".statusSel").forEach(select => {
+        select.addEventListener("change", async () => {
+          const orderId = select.getAttribute("data-id");
+          
+          try {
+            const result = await fetch(`/api/admin/orders/${orderId}/status`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: select.value })
+            }).then(r => r.json());
+            
+            ordersMsg.textContent = result.ok ? 
+              "✓ Status updated" : 
+              `✗ ${result.error || 'Error'}`;
+            ordersMsg.style.color = result.ok ? "#9ae6b4" : "#ff5252";
+            
+            setTimeout(() => ordersMsg.textContent = "", 2000);
+            
+            if (result.ok) {
+              refreshOrders();
+            }
+          } catch (error) {
+            console.error('Error updating status:', error);
+            ordersMsg.textContent = "✗ Network error";
+            ordersMsg.style.color = "#ff5252";
+          }
+        });
+      });
+      
+      ordersMsg.textContent = `Showing ${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''}`;
+      ordersMsg.style.color = "#bcbcbc";
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
+      ordersMsg.textContent = "✗ Failed to load orders";
+      ordersMsg.style.color = "#ff5252";
+    }
+  }
+
+  // ==================== INITIALIZATION ====================
+  async function init() {
+    try {
+      // Load available dates
+      const dates = await allowedDates();
+      dates.forEach(d => {
+        const option = document.createElement("option");
+        option.value = d;
+        option.textContent = new Date(d + "T00:00:00").toDateString();
+        dateSel.appendChild(option);
+      });
+
+      // Load initial data
+      await loadSettings();
+      await refreshOrders();
+
+      // Event listeners
+      document.getElementById("saveStatus").addEventListener("click", saveStatus);
+      document.getElementById("saveSettings").addEventListener("click", saveSettings);
+      document.getElementById("refresh").addEventListener("click", refreshOrders);
+      document.getElementById("filterStatus").addEventListener("change", refreshOrders);
+      document.getElementById("search").addEventListener("input", refreshOrders);
+      
+      dateSel.addEventListener("change", loadSettings);
+      
+      statusFull.addEventListener("change", () => {
+        applyBadge(badgeFull, statusFull.value, "Full");
+      });
+      
+      statusHalf.addEventListener("change", () => {
+        applyBadge(badgeHalf, statusHalf.value, "Half");
+      });
+    } catch (error) {
+      console.error('Initialization error:', error);
+      alert('Failed to initialize admin panel. Please refresh the page.');
+    }
+  }
+
+  // Start the application
+  init();
+})();
