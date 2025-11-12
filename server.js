@@ -112,7 +112,7 @@ async function sendAdminNotification(order) {
   try {
     for (const email of notificationEmails) {
       await resend.emails.send({
-        from: "MEEF MEATS <orders@resend.dev>",
+        from: "MEEF MEATS <onboarding@resend.dev>",
         to: email,
         subject: "New Order - " + order.id + " - $" + (order.total_cents / 100).toFixed(2),
         html: emailHTML
@@ -156,7 +156,7 @@ async function sendCustomerConfirmation(order) {
 
   try {
     await resend.emails.send({
-      from: "MEEF MEATS <orders@resend.dev>",
+      from: "MEEF MEATS <onboarding@resend.dev>",
       to: order.email,
       subject: "Order Confirmation - " + order.id + " - MEEF MEATS",
       html: emailHTML
@@ -167,67 +167,47 @@ async function sendCustomerConfirmation(order) {
   }
 }
 
-function allowedDatesISO() {
-  const now = new Date();
-  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 21);
-  const daysUntilFriday = (5 - base.getDay() + 7) % 7;
-  const finalDaysToAdd = daysUntilFriday === 0 ? 7 : daysUntilFriday;
-  const fri = new Date(base);
-  fri.setDate(base.getDate() + finalDaysToAdd);
-  const sat = new Date(fri);
-  sat.setDate(fri.getDate() + 1);
-  const sun = new Date(fri);
-  sun.setDate(fri.getDate() + 2);
-  const formatDate = (d) => d.toISOString().slice(0, 10);
-  return [formatDate(fri), formatDate(sat), formatDate(sun)];
+function generateAllowedDates() {
+  const dates = [];
+  const today = new Date();
+  
+  for (let i = 21; i <= 23; i++) {
+    const futureDate = new Date(today);
+    futureDate.setDate(today.getDate() + i);
+    
+    const dayOfWeek = futureDate.getDay();
+    if (dayOfWeek >= 5 || dayOfWeek === 0) {
+      const isoDate = futureDate.toISOString().split("T")[0];
+      dates.push(isoDate);
+    }
+  }
+  
+  return dates;
 }
 
 app.get("/api/allowed-dates", (req, res) => {
   try {
-    res.json(allowedDatesISO());
+    const dates = generateAllowedDates();
+    res.json(dates);
   } catch (error) {
-    res.status(500).json({ ok: false, error: "Failed to calculate dates" });
+    console.error("Error generating dates:", error);
+    res.status(500).json({ ok: false, error: "Failed to generate dates" });
   }
-});
-
-app.get("/api/products", (req, res) => {
-  res.json([{
-    id: "turkey",
-    name: "Turkey",
-    description: "Full Texas turkey or 1/2 Texas turkey. Choose your flavor.",
-    flavors: ["Cajun", "Lemon Pepper", "Honey Mustard", "Fajita"],
-    price_full: 5000,
-    price_half: 3000
-  }]);
 });
 
 app.get("/api/settings", (req, res) => {
   try {
     const settings = readJSON(SETTINGS_FILE);
-    res.json(settings);
+    
+    const publicSettings = {
+      payment_methods: settings.payment_methods || {},
+      contact: settings.contact || {},
+      instagram_url: settings.instagram_url || ""
+    };
+    
+    res.json(publicSettings);
   } catch (error) {
     res.status(500).json({ ok: false, error: "Failed to load settings" });
-  }
-});
-
-app.get("/api/availability", (req, res) => {
-  const date = req.query.date;
-  if (!date) {
-    return res.status(400).json({ ok: false, error: "Missing date parameter" });
-  }
-  try {
-    const settings = readJSON(SETTINGS_FILE);
-    const overrides = (settings.status_overrides && settings.status_overrides[date]) || {};
-    res.json({
-      cap_full: 30,
-      cap_half: 10,
-      remaining_full: overrides.full === "out" ? 0 : 20,
-      remaining_half: overrides.half === "out" ? 0 : 8,
-      status_full: overrides.full || "ok",
-      status_half: overrides.half || "ok"
-    });
-  } catch (error) {
-    res.status(500).json({ ok: false, error: "Failed to check availability" });
   }
 });
 
@@ -277,12 +257,22 @@ app.post("/api/orders", async (req, res) => {
     const orders = readJSON(ORDERS_FILE);
     orders.push(order);
     
-    if (!writeJSON(ORDERS_FILE, orders)) {
+    const saved = writeJSON(ORDERS_FILE, orders);
+    
+    if (!saved) {
+      console.error("Failed to save order to file");
       return res.status(500).json({ ok: false, error: "Failed to save order" });
     }
+    
+    console.log("Order saved successfully:", order.id);
 
-    await sendAdminNotification(order);
-    await sendCustomerConfirmation(order);
+    // Send emails (these happen after order is saved, so if they fail, order is still saved)
+    try {
+      await sendAdminNotification(order);
+      await sendCustomerConfirmation(order);
+    } catch (emailError) {
+      console.error("Email sending failed, but order was saved:", emailError);
+    }
     
     res.json({ ok: true, order_id: order.id, total_cents: total });
   } catch (error) {
@@ -397,6 +387,8 @@ app.use((req, res) => {
   res.status(404).json({ ok: false, error: "Route not found" });
 });
 
-app.listen(PORT, () => {
+// ✅ CRITICAL FIX #1: Add '0.0.0.0' host binding for Render
+app.listen(PORT, '0.0.0.0', () => {
   console.log("MEEF MEATS running on port " + PORT);
+  console.log("Resend configured:", resend ? "Yes" : "No");
 });
