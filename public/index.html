@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Pre-order authentic smoked Texas turkeys — MEEF MEATS">
+  <title>MEEF MEATS — Pure Texas. Pure Turkey.</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ─── TOPBAR ─────────────────────────────────────────── -->
+  <div class="topbar">
+    <div class="brand">MEEF <span>MEATS</span></div>
+    <div class="menu-wrap">
+      <button class="menu-btn" id="menuBtn" aria-label="Menu">
+        <div class="menu-icon">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+      </button>
+      <div class="dropdown" id="menuDrop">
+        <a href="#order">Order</a>
+        <a href="#" id="navTrack">Track Order</a>
+        <a href="#" id="navIG" target="_blank" rel="noopener">Instagram</a>
+        <a href="/admin" target="_blank" rel="noopener">Admin</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── HERO ───────────────────────────────────────────── -->
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">Pre-order pickup • Fri–Sun</div>
+      <h1>Pure Texas.<br><em>Pure Turkey.</em></h1>
+      <div class="hero-sub">Order exactly 3 weeks ahead. Choose your cut, pick your flavor. Pick up during our weekend window.</div>
+    </div>
+  </div>
+
+  <!-- ─── BUILD YOUR ORDER ───────────────────────────────── -->
+  <div class="content-grid" id="order">
+
+    <div class="build-col">
+
+      <!-- STEP 1: DATE -->
+      <div class="card">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <div class="step-title">Pickup Date</div>
+        </div>
+        <div class="step-label">Select your pickup day</div>
+        <div class="date-pills" id="dayButtons"></div>
+        <div style="margin-top:14px">
+          <span class="hero-badge" id="pickupWindowBadge">Pickup: 07:00 AM - 10:30 AM</span>
+        </div>
+      </div>
+
+      <!-- STEP 2: SIZE (dynamic from menu) -->
+      <div class="card">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <div class="step-title">Select Size</div>
+        </div>
+        <div class="step-label">Choose your turkey size</div>
+        <div class="opt-grid" id="sizeOptions">
+          <!-- Populated from /api/menu -->
+        </div>
+      </div>
+
+      <!-- STEP 3: FLAVOR (dynamic from menu) -->
+      <div class="card">
+        <div class="step-head">
+          <div class="step-num">3</div>
+          <div class="step-title">Select Flavor</div>
+        </div>
+        <div class="step-label">Pick your seasoning</div>
+        <div class="opt-grid" id="flavorOptions">
+          <!-- Populated from /api/menu -->
+        </div>
+      </div>
+
+      <!-- STEP 4: QUANTITY -->
+      <div class="card">
+        <div class="step-head">
+          <div class="step-num">4</div>
+          <div class="step-title">Quantity</div>
+        </div>
+        <div class="step-label">How many turkeys?</div>
+        <div class="qty-row">
+          <button class="qty-btn" id="qtyMinus">−</button>
+          <div class="qty-num" id="qtyDisplay">1</div>
+          <button class="qty-btn" id="qtyPlus">+</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ─── RIGHT: SUMMARY + CART ────────────────────────── -->
+    <div>
+      <div class="card summary-card">
+
+        <div class="summary-title">Your Turkey 🍗</div>
+        <div class="preview-box">
+          <div class="preview-row">
+            <span class="preview-label">Size</span>
+            <span class="preview-val" id="prevSize">—</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">Flavor</span>
+            <span class="preview-val" id="prevFlavor">—</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">Qty</span>
+            <span class="preview-val" id="prevQty">1</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">Pickup</span>
+            <span class="preview-val" id="prevDate">—</span>
+          </div>
+        </div>
+
+        <div class="total-bar">
+          <span class="total-label">Total</span>
+          <span class="total-price" id="prevTotal">$0</span>
+        </div>
+
+        <button class="btn-primary" id="addToCartBtn" disabled>Add to Cart</button>
+
+        <!-- Cart -->
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+          <div class="summary-title">Cart (<span id="cartCount">0</span>)</div>
+          <div id="cartItems">
+            <div class="cart-empty">Add items to get started</div>
+          </div>
+          <button class="btn-checkout hidden" id="checkoutBtn">
+            Checkout — <span id="cartTotal">$0</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── STEP 5: CUSTOMER INFO (shown on checkout) ──────── -->
+  <div class="card hidden" id="customerSection" style="margin-top:28px">
+    <div class="step-head">
+      <div class="step-num">5</div>
+      <div class="step-title">Your Information</div>
+    </div>
+    <div class="info-form">
+      <input type="text" id="custName" placeholder="Full Name *" class="input" required>
+      <input type="email" id="custEmail" placeholder="Email Address *" class="input" required>
+      <input type="tel" id="custPhone" placeholder="Phone Number *" class="input" required>
+      <textarea id="custNotes" placeholder="Special requests or notes (optional)" style="min-height:60px"></textarea>
+      <button class="btn-primary" id="placeOrderBtn" style="margin-top:4px">Place Order</button>
+    </div>
+    <div class="form-error" id="orderError"></div>
+  </div>
+
+  <!-- ─── FOOTER ─────────────────────────────────────────── -->
+  <div class="footer">
+    © <span id="year"></span> MEEF MEATS • <a href="/admin" target="_blank">Admin</a> • <a href="#" id="footIG">Instagram</a>
+  </div>
+
+</div>
+
+<!-- ─── PAYMENT MODAL ──────────────────────────────────── -->
+<div class="modal" id="payModal">
+  <div class="modal-box">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:48px;margin-bottom:12px">✅</div>
+      <h2 style="font-family:var(--font-display);font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Order Confirmed!</h2>
+      <div class="small" style="margin-top:6px">Order ID: <strong id="confirmId"></strong></div>
+    </div>
+
+    <div id="payInstructions"></div>
+    <div class="pay-note" id="payNote"></div>
+
+    <button class="btn-primary" onclick="document.getElementById('payModal').classList.remove('open')">Got It!</button>
+  </div>
+</div>
+
+<!-- ─── TOAST ──────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script src="/assets/main.js"></script>
+</body>
+</html>
