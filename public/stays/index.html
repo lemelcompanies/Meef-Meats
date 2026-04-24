@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dallas Stay Scanner</title>
+  <link rel="stylesheet" href="/stays/styles.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Dallas Stay Scanner</h1>
+      <p>Live rolling updates every minute: Hotels ≤ $300 and Airbnb ≤ $260 around The Ritz-Carlton, Dallas.</p>
+      <div class="actions">
+        <button id="scanBtn">Scan Listings</button>
+        <button id="showDeckBtn">Deck</button>
+        <button id="showLikesBtn">Likes</button>
+      </div>
+    </header>
+
+    <section id="deckView">
+      <div id="meta" class="meta"></div>
+      <div id="cardStack" class="card-stack"></div>
+      <div class="swipe-actions">
+        <button id="passBtn" class="pass">Swipe Left</button>
+        <button id="likeBtn" class="like">Swipe Right</button>
+      </div>
+    </section>
+
+    <section id="likesView" class="hidden">
+      <h2>Liked listings</h2>
+      <div id="likesList" class="likes-list"></div>
+    </section>
+  </main>
+  <script src="/stays/main.js"></script>
+</body>
+</html>

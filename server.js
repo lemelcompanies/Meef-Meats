@@ -1,6 +1,7 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { Resend } from "resend";
 
@@ -21,6 +22,10 @@ const DATA_DIR = path.join(__dirname, "data");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 const MENU_FILE = path.join(DATA_DIR, "menu.json");
+const STAY_LIKES_FILE = path.join(DATA_DIR, "stay-likes.json");
+const STAY_CACHE_FILE = path.join(DATA_DIR, "stay-cache.json");
+const RITZ_CARLTON_DALLAS = { lat: 32.79252, lon: -96.80531 };
+const STAY_CACHE_TTL_MS = 2 * 60 * 1000;
 
 // ─── Ensure data directory & seed files ────────────────────
 function ensureDataFiles() {
@@ -47,6 +52,13 @@ function ensureDataFiles() {
       sides: [],
       extras: []
     });
+  }
+
+  if (!fs.existsSync(STAY_LIKES_FILE)) {
+    writeJSON(STAY_LIKES_FILE, []);
+  }
+  if (!fs.existsSync(STAY_CACHE_FILE)) {
+    writeJSON(STAY_CACHE_FILE, { updated_at: null, listings: [] });
   }
 
   if (!fs.existsSync(SETTINGS_FILE)) {
@@ -284,6 +296,126 @@ function generateAllowedDates() {
   return [friday, sat, sun].map(d => d.toISOString().split("T")[0]);
 }
 
+function distanceMiles(a, b) {
+  const toRad = d => (d * Math.PI) / 180;
+  const R = 3958.8;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function textFromHTML(input = "") {
+  return input
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function unwrapDuckDuckGoUrl(rawUrl = "") {
+  const cleaned = rawUrl.startsWith("//") ? `https:${rawUrl}` : rawUrl;
+  const parsed = new URL(cleaned, "https://duckduckgo.com");
+  const target = parsed.searchParams.get("uddg");
+  return target ? decodeURIComponent(target) : cleaned;
+}
+
+function stableId(source, text) {
+  return `${source}-${Buffer.from(text).toString("hex").slice(0, 18)}`;
+}
+
+function parseSearchResults(html, source) {
+  const cards = [];
+  const resultRegex = /<a rel="nofollow" class="result__a" href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
+  let match;
+
+  while ((match = resultRegex.exec(html)) !== null) {
+    const url = unwrapDuckDuckGoUrl(match[1]);
+    const name = textFromHTML(match[2]);
+    const trailing = html.slice(match.index, match.index + 1200);
+    const snippetMatch = trailing.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>|class="result__snippet"[^>]*>([\s\S]*?)<\/div>/);
+    const snippet = textFromHTML(snippetMatch?.[1] || snippetMatch?.[2] || "");
+
+    const priceMatch = snippet.match(/(?:US\$|\$)\s?(\d{2,4})/i) || name.match(/(?:US\$|\$)\s?(\d{2,4})/i);
+    if (!priceMatch) continue;
+    const price = Number(priceMatch[1]);
+
+    const distMatch = snippet.match(/(\d+(?:\.\d+)?)\s*(?:mile|mi)\b/i);
+    const distance = distMatch ? Number(distMatch[1]) : null;
+    const id = stableId(source, `${url}-${name}`);
+
+    cards.push({
+      id,
+      source,
+      name,
+      price,
+      distance_miles: distance,
+      rating: null,
+      location: "Dallas, TX",
+      summary: snippet || "Live search result",
+      url
+    });
+  }
+
+  return cards;
+}
+
+async function fetchDuckDuckGo(query) {
+  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+  const output = execSync(
+    `curl -sSL --max-time 20 -A "Mozilla/5.0" "${url}"`,
+    { encoding: "utf8" }
+  );
+  if (!output || output.length < 100) throw new Error("DuckDuckGo returned empty response");
+  return output;
+}
+
+async function runLiveStayScan() {
+  const [hotelA, hotelB, airbnbA, airbnbB] = await Promise.all([
+    fetchDuckDuckGo("site:booking.com Dallas hotel near Ritz Carlton US$ under 300"),
+    fetchDuckDuckGo("site:hotels.com Dallas downtown hotel $ per night"),
+    fetchDuckDuckGo("site:airbnb.com/rooms Dallas TX $ per night"),
+    fetchDuckDuckGo("airbnb dallas near ritz carlton under $260")
+  ]);
+
+  const hotelListings = [...parseSearchResults(hotelA, "hotel"), ...parseSearchResults(hotelB, "hotel")]
+    .filter(item => item.price <= 300 && (item.distance_miles == null || item.distance_miles <= 10));
+  const airbnbListings = [...parseSearchResults(airbnbA, "airbnb"), ...parseSearchResults(airbnbB, "airbnb")]
+    .filter(item => item.price <= 260 && (item.distance_miles == null || item.distance_miles <= 10));
+
+  const merged = [...hotelListings, ...airbnbListings];
+  const uniq = new Map();
+  for (const item of merged) {
+    if (!uniq.has(item.url)) uniq.set(item.url, item);
+  }
+
+  return Array.from(uniq.values()).sort((a, b) => {
+    if (a.price !== b.price) return a.price - b.price;
+    return (a.distance_miles ?? 999) - (b.distance_miles ?? 999);
+  });
+}
+
+async function refreshStayCache(force = false) {
+  const cache = readJSON(STAY_CACHE_FILE);
+  const lastUpdated = cache.updated_at ? new Date(cache.updated_at).getTime() : 0;
+  const expired = !lastUpdated || (Date.now() - lastUpdated) > STAY_CACHE_TTL_MS;
+
+  if (!force && !expired && Array.isArray(cache.listings) && cache.listings.length) {
+    return cache;
+  }
+
+  const listings = await runLiveStayScan();
+  const next = { updated_at: new Date().toISOString(), listings };
+  writeJSON(STAY_CACHE_FILE, next);
+  return next;
+}
+
 // ─── Auth middleware ────────────────────────────────────────
 function basicAuth(req, res, next) {
   const auth = req.headers.authorization || "";
@@ -296,6 +428,15 @@ function basicAuth(req, res, next) {
 // ─── Initialize ────────────────────────────────────────────
 ensureDataFiles();
 app.use(express.json({ limit: "5mb" }));
+
+refreshStayCache(true).catch(err => {
+  console.error("[stays] Initial live scan failed:", err.message);
+});
+setInterval(() => {
+  refreshStayCache(true).catch(err => {
+    console.error("[stays] Rolling scan failed:", err.message);
+  });
+}, STAY_CACHE_TTL_MS);
 
 // ═══════════════════════════════════════════════════════════
 //  PUBLIC API
@@ -455,6 +596,58 @@ app.get("/api/track/:orderId", (req, res) => {
   }
 });
 
+app.get("/api/stays/scan", async (req, res) => {
+  try {
+    const force = req.query.force === "1";
+    const minMiles = Number(req.query.minMiles ?? 0);
+    const maxMiles = Number(req.query.maxMiles ?? 10);
+    const cache = await refreshStayCache(force);
+    const listings = (cache.listings || []).filter(item => {
+      const d = item.distance_miles;
+      if (d == null) return true;
+      return d >= minMiles && d <= maxMiles;
+    });
+
+    res.json({
+      ok: true,
+      center: { name: "The Ritz-Carlton, Dallas", ...RITZ_CARLTON_DALLAS },
+      constraints: { hotel_max_price: 300, airbnb_max_price: 260, min_miles: minMiles, max_miles: maxMiles },
+      scanned_at: cache.updated_at,
+      live: true,
+      listings
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: "Failed live scan", detail: err.message });
+  }
+});
+
+app.get("/api/stays/likes", (req, res) => {
+  const likes = readJSON(STAY_LIKES_FILE);
+  res.json({ ok: true, likes: Array.isArray(likes) ? likes : [] });
+});
+
+app.post("/api/stays/likes", (req, res) => {
+  const listing = req.body?.listing;
+  if (!listing || !listing.id) return res.status(400).json({ ok: false, error: "listing.id required" });
+
+  const likes = readJSON(STAY_LIKES_FILE);
+  const arr = Array.isArray(likes) ? likes : [];
+  if (!arr.some(item => item.id === listing.id)) {
+    arr.push(listing);
+    writeJSON(STAY_LIKES_FILE, arr);
+  }
+
+  res.json({ ok: true, likes: arr });
+});
+
+app.delete("/api/stays/likes/:id", (req, res) => {
+  const likes = readJSON(STAY_LIKES_FILE);
+  const arr = Array.isArray(likes) ? likes : [];
+  const filtered = arr.filter(item => item.id !== req.params.id);
+  writeJSON(STAY_LIKES_FILE, filtered);
+  res.json({ ok: true, likes: filtered });
+});
+
 // ═══════════════════════════════════════════════════════════
 //  ADMIN API
 // ═══════════════════════════════════════════════════════════
@@ -565,8 +758,13 @@ app.put("/api/admin/menu", basicAuth, (req, res) => {
   }
 });
 
+app.get("/stays", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "stays", "index.html"));
+});
+
 // ─── Static files ──────────────────────────────────────────
 app.use("/assets", express.static(path.join(__dirname, "public", "assets")));
+app.use("/stays", express.static(path.join(__dirname, "public", "stays")));
 app.use(express.static(path.join(__dirname, "public")));
 
 // SPA fallback — serve index for non-api, non-admin routes
