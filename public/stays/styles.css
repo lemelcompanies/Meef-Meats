@@ -1,0 +1,20 @@
+:root { color-scheme: dark; }
+body { margin: 0; font-family: Arial, sans-serif; background: #111; color: #f5f5f5; }
+.app { max-width: 860px; margin: 0 auto; padding: 24px; }
+h1 { margin: 0 0 8px; }
+.actions, .swipe-actions { display: flex; gap: 10px; margin: 14px 0; }
+button { border: 0; border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+#scanBtn { background: #ffcc33; color: #111; }
+#showDeckBtn, #showLikesBtn { background: #2b2b2b; color: #fff; }
+.pass { background: #3b3b3b; color: #fff; }
+.like { background: #28c76f; color: #111; }
+.meta { color: #bbb; margin-bottom: 12px; }
+.card-stack { min-height: 330px; display: grid; place-items: center; }
+.card { width: min(100%, 500px); background: #1c1c1c; border: 1px solid #333; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+.card h3 { margin-top: 0; }
+.badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.badge { background: #2c2c2c; border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+.card a { color: #8bc6ff; }
+.likes-list { display: grid; gap: 10px; }
+.like-row { background: #1c1c1c; border: 1px solid #333; border-radius: 12px; padding: 12px; }
+.hidden { display: none; }
