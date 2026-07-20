@@ -1,0 +1,20 @@
+{
+  "name": "texas-tropical-plants-poster",
+  "version": "1.0.0",
+  "description": "Texas Tropical Plants — luxury photorealistic advertising poster generation via fal.ai",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "generate": "node generate.js",
+    "generate:ideogram": "node generate.js ideogram",
+    "generate:recraft": "node generate.js recraft",
+    "upscale": "node upscale.js crisp",
+    "upscale:detail": "node upscale.js detail"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
