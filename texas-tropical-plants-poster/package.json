@@ -7,7 +7,9 @@
   "scripts": {
     "generate": "node generate.js",
     "generate:ideogram": "node generate.js ideogram",
-    "generate:recraft": "node generate.js recraft"
+    "generate:recraft": "node generate.js recraft",
+    "upscale": "node upscale.js crisp",
+    "upscale:detail": "node upscale.js detail"
   },
   "dependencies": {
     "@fal-ai/client": "^1.2.0"

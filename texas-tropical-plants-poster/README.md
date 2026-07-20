@@ -34,8 +34,11 @@ Notes:
   Flux Ultra, then set the typography, banner, and contact block in a design
   tool (Canva/Figma/Illustrator) on top. That guarantees pixel-perfect brand
   text at 4K.
-- To reach full 4K, upscale the result with `fal-ai/clarity-upscaler` or
-  fal's ESRGAN endpoints.
+- To reach full 4K, upscale the result: `npm run upscale` (ESRGAN, faithful,
+  keeps text pixel-exact) or `npm run upscale:detail` (Clarity upscaler, adds
+  photographic micro-detail — verify the text afterwards). Both default to the
+  newest image in `output/`; pass a file path or URL as a second argument to
+  target a specific image, e.g. `node upscale.js detail output/poster.jpg`.
 
 ## Editing the brief
 
