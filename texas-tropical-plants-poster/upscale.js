@@ -68,6 +68,17 @@ const PRESETS = {
         "ultra photorealistic commercial interior photography, dense living plant wall with fine leaf detail, crisp clean typography, premium print advertisement, sharp focus, high dynamic range",
     },
   },
+  reimagine: {
+    model: "fal-ai/clarity-upscaler",
+    input: {
+      image_url: imageUrl,
+      upscale_factor: 2,
+      creativity: 0.55, // high: visibly redraw surfaces with photographic realism
+      resemblance: 0.6, // keep the overall composition and layout
+      prompt:
+        "real photograph, professional architectural interior photography, dense installed tropical living plant wall with visible species variation, large glossy monstera and philodendron leaves, ferns, burgundy accent foliage, natural depth and shadows between leaves, tan leather chair, beige sofa, walnut wood desk and coffee table, soft window daylight, warm track lighting, fine fabric and wood grain texture, shot on full-frame camera, 50mm lens, f/5.6, editorial magazine quality, crisp clean typography, premium print advertisement",
+    },
+  },
 };
 
 const preset = PRESETS[presetName];
